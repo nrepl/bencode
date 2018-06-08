@@ -45,7 +45,7 @@ FIXME
 
 ## License
 
-Copyright © 2018 Bozhidar Batsov and nREPL contributors
+Copyright © 2018 Meikel Brandmeyer, Bozhidar Batsov and nREPL contributors
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
