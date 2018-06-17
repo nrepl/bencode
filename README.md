@@ -44,7 +44,7 @@ the distinct advantage that it's certainly going to work well with nREPL. ;-)
 Just add `bencode` as a dependency to your project and start hacking.
 
 ```clojure
-[nrepl/bencode "0.3.0"]
+[nrepl/bencode "1.0.0"]
 ```
 
 The API is documented in great detail [here](https://github.com/nrepl/bencode/blob/master/src/bencode/core.clj).
