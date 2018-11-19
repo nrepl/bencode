@@ -9,14 +9,26 @@
 (ns bencode.core
   "A netstring and bencode implementation for Clojure."
   {:author "Meikel Brandmeyer"}
-  (:require [clojure.java.io :as io])
+  (:require
+    #?(:clj [clojure.java.io :as io]
+       :cljr [clojure.clr.io :as io]))
   (:import clojure.lang.RT
-           [java.io ByteArrayOutputStream
-            EOFException
-            InputStream
-            IOException
-            OutputStream
-            PushbackInputStream]))
+           #?(:clj
+              [java.io ByteArrayOutputStream
+               EOFException
+               InputStream
+               IOException
+               OutputStream
+               PushbackInputStream]
+              :cljr
+              [System.IO
+               SeekOrigin
+               MemoryStream
+               Stream
+               IOException
+               EndOfStreamException
+               StreamReader
+               StreamWriter])))
 
 ;; # Motivation
 ;;
@@ -82,43 +94,67 @@
 (def e     101)
 (def colon 58)
 
-(defn #^{:private true} read-byte
-  #^long [#^InputStream input]
-  (let [c (.read input)]
-    (when (neg? c)
-      (throw (EOFException. "Invalid netstring. Unexpected end of input.")))
-    ;; Here we have a quirk for example. `.read` returns -1 on end of
-    ;; input. However the Java `Byte` has only a range from -128 to 127.
-    ;; How does the fit together?
-    ;;
-    ;; The whole thing is shifted. `.read` actually returns an int
-    ;; between zero and 255. Everything below the value 128 stands
-    ;; for itself. But larger values are actually negative byte values.
-    ;;
-    ;; So we have to do some translation here. `Byte/byteValue` would
-    ;; do that for us, but we want to avoid boxing here.
-    (if (< 127 c) (- c 256) c)))
+#?(:clj
+   (defn #^{:private true} read-byte
+     #^long [#^InputStream input]
+     (let [c (.read input)]
+       (when (neg? c)
+         (throw (EOFException. "Invalid netstring. Unexpected end of input.")))
+       ;; Here we have a quirk for example. `.read` returns -1 on end of
+       ;; input. However the Java `Byte` has only a range from -128 to 127.
+       ;; How does the fit together?
+       ;;
+       ;; The whole thing is shifted. `.read` actually returns an int
+       ;; between zero and 255. Everything below the value 128 stands
+       ;; for itself. But larger values are actually negative byte values.
+       ;;
+       ;; So we have to do some translation here. `Byte/byteValue` would
+       ;; do that for us, but we want to avoid boxing here.
+       (if (< 127 c) (- c 256) c)))
+   :cljr
+   (defn #^{:private true} read-byte
+     #^long [#^Stream input]
+     (let [c (.ReadByte input)]
+       (when (neg? c)
+         (throw (EndOfStreamException. "Invalid netstring. Unexpected end of input.")))
+       (if (< 127 c) (- c 256) c))))
 
-(defn #^{:private true :tag "[B"} read-bytes
-  #^Object [#^InputStream input n]
-  (let [content (byte-array n)]
-    (loop [offset (int 0)
-           len    (int n)]
-      (let [result (.read input content offset len)]
-        (when (neg? result)
-          (throw
-           (EOFException.
-            "Invalid netstring. Less data available than expected.")))
-        (when (not= result len)
-          (recur (+ offset result) (- len result)))))
-    content))
+#?(:clj
+   (defn #^{:private true :tag "[B"} read-bytes
+     #^Object [#^InputStream input n]
+     (let [content (byte-array n)]
+       (loop [offset (int 0)
+              len    (int n)]
+         (let [result (.read input content offset len)]
+           (when (neg? result)
+             (throw
+               (EOFException.
+                "Invalid netstring. Less data available than expected.")))
+           (when (not= result len)
+             (recur (+ offset result) (- len result)))))
+       content))
+   :cljr
+   (defn #^{:private true :tag "System.Byte[]"} read-bytes
+     #^Object [#^Stream input n]
+     (let [content (byte-array n)]
+       (loop [offset (int 0)
+              len    (int n)]
+         (let [result (.Read input content offset len)]
+           (when (> (.Position input) (.Length input))
+             (throw
+               (EndOfStreamException.
+                "Invalid netstring. Less data available than expected.")))
+           (when (not= result len)
+             (recur (+ offset result) (- len result)))))
+       content)))
 
 ;; `read-long` is used for reading integers from the stream as well
 ;; as the byte count prefixes of byte strings. The delimiter is \:
 ;; for byte count prefixes and \e for integers.
 
 (defn #^{:private true} read-long
-  #^long [#^InputStream input delim]
+  #^long #?(:clj [#^InputStream input delim]
+            :cljr [#^Stream input delim])
   (loop [n (long 0)]
     ;; We read repeatedly a byte from the input…
     (let [b (read-byte input)]
@@ -148,7 +184,8 @@
 ;;
 ;; With this in mind we define the inner helper function first.
 
-(declare #^"[B" string>payload
+(declare #?(:clj #^"[B" string>payload
+            :cljr #^"System.Byte[]" string>payload)
          #^String string<payload)
 
 (defn #^{:private true} read-netstring*
@@ -157,7 +194,8 @@
 
 ;; And the public facing API: `read-netstring`.
 
-(defn #^"[B" read-netstring
+(defn #?(:clj #^"[B" read-netstring
+         :cljr #^"System.Byte[]" read-netstring)
   "Reads a classic netstring from input—an InputStream. Returns the
   contained binary data as byte array."
   [input]
@@ -170,13 +208,25 @@
 ;; are defined as follows to simplify the conversion between strings
 ;; and byte arrays in various parts of the code.
 
-(defn #^{:private true :tag "[B"} string>payload
-  [#^String s]
-  (.getBytes s "UTF-8"))
+#?(:clj
+   (defn #^{:private true :tag "[B"}
+     string>payload
+     [#^String s]
+     (.getBytes s "UTF-8"))
+   :cljr
+     (defn #^{:private true :tag "System.Byte[]"}
+       string>payload
+       [#^String s]
+       (.GetBytes System.Text.Encoding/UTF8 s)))
 
-(defn #^{:private true :tag String} string<payload
-  [#^"[B" b]
-  (String. b "UTF-8"))
+#?(:clj
+   (defn #^{:private true :tag String} string<payload
+     [#^"[B" b]
+     (String. b "UTF-8"))
+   :cljr
+   (defn #^{:private true :tag String} string<payload
+     [#^"System.Byte[]" b]
+     (.GetString System.Text.Encoding/UTF8 b)))
 
 ;; ## Writing a netstring
 ;;
@@ -189,20 +239,38 @@
 ;; Similar to `read-netstring` we also split `write-netstring` into
 ;; the entry point itself and a helper function.
 
-(defn #^{:private true} write-netstring*
-  [#^OutputStream output #^"[B" content]
-  (doto output
-    (.write (string>payload (str (alength content))))
-    (.write (int colon))
-    (.write content)))
+#?(:clj
+   (defn #^{:private true} write-netstring*
+     [#^OutputStream output #^"[B" content]
+     (doto output
+           (.write (string>payload (str (alength content))))
+           (.write (int colon))
+           (.write content)))
+   :cljr
+   (defn #^{:private true} write-netstring*
+     [#^Stream output #^"System.Byte[]" content]
+     (let [payload (string>payload (str (alength content)))]
+       (doto output
+             (.Write payload 0 (count payload))
+             (.WriteByte (byte colon))
+             (.Write content 0 (count content))))))
 
-(defn write-netstring
-  "Write the given binary data to the output stream in form of a classic
-  netstring."
-  [#^OutputStream output content]
-  (doto output
-    (write-netstring* content)
-    (.write (int comma))))
+#?(:clj
+   (defn write-netstring
+     "Write the given binary data to the output stream in form of a classic
+      netstring."
+     [#^OutputStream output content]
+     (doto output
+           (write-netstring* content)
+           (.write (int comma))))
+   :cljr
+   (defn write-netstring
+     "Write the given binary data to the output stream in form of a classic
+     netstring."
+     [#^Stream output content]
+     (doto output
+       (write-netstring* content)
+       (.WriteByte (byte comma)))))
 
 ;; # Bencode
 ;;
@@ -235,7 +303,8 @@
 ;; retrieve the next token.
 
 (defn #^{:private true} read-token
-  [#^PushbackInputStream input]
+  #?(:clj [#^PushbackInputStream input]
+     :cljr [#^Stream input])
   (let [ch (read-byte input)]
     (cond
       (= (long e) ch) nil
@@ -243,7 +312,8 @@
       (= l ch) :list
       (= d ch) :map
       :else    (do
-                 (.unread input (int ch))
+                 #?(:clj (.unread input (int ch))
+                    :cljr (.Seek input -1 SeekOrigin/Current))
                  (read-netstring* input)))))
 
 ;; To read the bencode encoded data we walk a long the sequence of tokens
@@ -314,19 +384,20 @@
   'namespace/name'."
   (fn [_output thing]
     (cond
-      (instance? (RT/classForName "[B") thing) :bytes
-      (instance? InputStream thing) :input-stream
+      (instance? (RT/classForName #?(:clj "[B" :cljr "System.Byte[]")) thing) :bytes
+      (instance? #?(:clj InputStream :cljr Stream) thing) :input-stream
       (integer? thing) :integer
       (string? thing)  :string
       (symbol? thing)  :named
       (keyword? thing) :named
       (map? thing)     :map
-      (or (nil? thing) (coll? thing) (.isArray (class thing))) :list
+      (or (nil? thing) (coll? thing) (#?(:clj .isArray :cljr .IsArray) (class thing))) :list
       :else (type thing))))
 
 (defmethod write-bencode :default
   [output x]
-  (throw (IllegalArgumentException. (str "Cannot write value of type " (class x)))))
+  (throw (#?(:clj IllegalArgumentException. :cljr ArgumentException.)
+           (str "Cannot write value of type " (class x)))))
 
 ;; The following methods should be pretty straight-forward.
 ;;
@@ -348,20 +419,39 @@
 ;; number of bytes to write upfront. So we read in everything
 ;; for InputStreams and pass on the byte array.
 
-(defmethod write-bencode :input-stream
-  [output stream]
-  (let [bytes (ByteArrayOutputStream.)]
-    (io/copy stream bytes)
-    (write-netstring* output (.toByteArray bytes))))
+#?(:clj
+   (defmethod write-bencode :input-stream
+     [output stream]
+     (let [bytes (ByteArrayOutputStream.)]
+       (io/copy stream bytes)
+       (write-netstring* output (.toByteArray bytes))))
+   :cljr
+   (defmethod write-bencode :input-stream
+     [output stream]
+     (let [bytes (MemoryStream.)]
+       (try
+         (io/copy stream bytes)
+         (write-netstring* output (.ToArray bytes))
+         (finally
+           (.Dispose bytes))))))
 
 ;; Integers are again the ugly special case.
 
-(defmethod write-bencode :integer
-  [#^OutputStream output n]
-  (doto output
-    (.write (int i))
-    (.write (string>payload (str n)))
-    (.write (int e))))
+#?(:clj
+   (defmethod write-bencode :integer
+     [#^OutputStream output n]
+     (doto output
+           (.write (int i))
+           (.write (string>payload (str n)))
+           (.write (int e))))
+   :cljr
+   (defmethod write-bencode :integer
+     [#^Stream output n]
+     (let [payload (string>payload (str n))]
+       (doto output
+             (.WriteByte (byte i))
+             (.Write payload 0 (count payload))
+             (.WriteByte (byte e))))))
 
 ;; Symbols and keywords are converted to a string of the
 ;; form 'namespace/name' or just 'name' in case its not
@@ -378,34 +468,55 @@
 
 ;; Lists as well as maps work recursively to print their elements.
 
-(defmethod write-bencode :list
-  [#^OutputStream output lst]
-  (.write output (int l))
-  (doseq [elt lst]
-    (write-bencode output elt))
-  (.write output (int e)))
+#?(:clj
+   (defmethod write-bencode :list
+     [#^OutputStream output lst]
+     (.write output (int l))
+     (doseq [elt lst]
+       (write-bencode output elt))
+     (.write output (int e)))
+   :cljr
+   (defmethod write-bencode :list
+     [#^Stream output lst]
+     (.WriteByte output (byte l))
+     (doseq [elt lst]
+       (write-bencode output elt))
+     (.WriteByte output (byte e))))
 
 ;; However, maps are a bit special because their keys are sorted
 ;; lexicographically based on their byte string represantation.
 
 (declare lexicographically)
 
-(defmethod write-bencode :map
-  [#^OutputStream output m]
-  (let [translation (into {} (map (juxt string>payload identity) (keys m)))
-        key-strings (sort lexicographically (keys translation))
-        >value      (comp m translation)]
-    (.write output (int d))
-    (doseq [k key-strings]
-      (write-netstring* output k)
-      (write-bencode output (>value k)))
-    (.write output (int e))))
+#?(:clj
+   (defmethod write-bencode :map
+     [#^OutputStream output m]
+     (let [translation (into {} (map (juxt string>payload identity) (keys m)))
+           key-strings (sort lexicographically (keys translation))
+           >value      (comp m translation)]
+       (.write output (int d))
+       (doseq [k key-strings]
+         (write-netstring* output k)
+         (write-bencode output (>value k)))
+       (.write output (int e))))
+   :cljr
+   (defmethod write-bencode :map
+     [#^Stream output m]
+     (let [translation (into {} (map (juxt string>payload identity) (keys m)))
+           key-strings (sort lexicographically (keys translation))
+           >value      (comp m translation)]
+       (.WriteByte output (byte d))
+       (doseq [k key-strings]
+         (write-netstring* output k)
+         (write-bencode output (>value k)))
+       (.WriteByte output (byte e)))))
 
 ;; However, since byte arrays are not `Comparable` we need a custom
 ;; comparator which we can feed to `sort`.
 
 (defn #^{:private true} lexicographically
-  [#^"[B" a #^"[B" b]
+  #?(:clj [#^"[B" a #^"[B" b]
+     :cljr [#^"System.Byte[]" a #^"System.Byte[]" b])
   (let [alen (alength a)
         blen (alength b)
         len  (min alen blen)]
