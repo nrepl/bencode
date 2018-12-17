@@ -38,7 +38,7 @@ This particular implementation was extracted from [nREPL][], so it
 could be reused by other applications and be made
 ClojureScript-compatible as well.
 
-[nREPL]: https://nrepl.xyz
+[nREPL]: https://nrepl.org
 
 There are other netstring/bencode libraries for Clojure out there, but this one has
 the distinct advantage that it's certainly going to work well with nREPL. ;-)
