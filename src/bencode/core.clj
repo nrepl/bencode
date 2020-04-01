@@ -315,6 +315,7 @@
   (fn [_output thing]
     (cond
       (nil? thing) :list
+      ;; borrowed from Clojure 1.9's bytes? predicate:
       (-> thing class .getComponentType (= Byte/TYPE)) :bytes
       (instance? InputStream thing) :input-stream
       (integer? thing) :integer
