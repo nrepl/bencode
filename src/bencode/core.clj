@@ -314,14 +314,16 @@
   'namespace/name'."
   (fn [_output thing]
     (cond
-      (instance? (RT/classForName "[B") thing) :bytes
+      (nil? thing) :list
+      ;; borrowed from Clojure 1.9's bytes? predicate:
+      (-> thing class .getComponentType (= Byte/TYPE)) :bytes
       (instance? InputStream thing) :input-stream
       (integer? thing) :integer
       (string? thing)  :string
       (symbol? thing)  :named
       (keyword? thing) :named
       (map? thing)     :map
-      (or (nil? thing) (coll? thing) (.isArray (class thing))) :list
+      (or (coll? thing) (.isArray (class thing))) :list
       :else (type thing))))
 
 (defmethod write-bencode :default
