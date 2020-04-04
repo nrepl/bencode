@@ -10,8 +10,7 @@
   "A netstring and bencode implementation for Clojure."
   {:author "Meikel Brandmeyer"}
   (:require [clojure.java.io :as io])
-  (:import clojure.lang.RT
-           [java.io ByteArrayOutputStream
+  (:import [java.io ByteArrayOutputStream
             EOFException
             InputStream
             IOException
