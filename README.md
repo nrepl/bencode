@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nrepl/bencode.svg?branch=master)](https://travis-ci.org/nrepl/bencode)
+[![CircleCI](https://circleci.com/gh/nrepl/nrepl/tree/master.svg?style=svg)](https://circleci.com/gh/nrepl/bencode/tree/master)
 [![Clojars Project](https://img.shields.io/clojars/v/nrepl/bencode.svg)](https://clojars.org/nrepl/bencode)
 [![cljdoc badge](https://cljdoc.org/badge/nrepl/bencode)](https://cljdoc.org/d/nrepl/bencode/CURRENT)
 
