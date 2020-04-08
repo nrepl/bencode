@@ -6,6 +6,15 @@
 
 A netstring and bencode implementation for Clojure.
 
+This particular implementation was extracted from [nREPL][], so it
+could be reused by other applications and be made
+ClojureScript-compatible as well.
+
+[nREPL]: https://nrepl.org
+
+There are other netstring/bencode libraries for Clojure out there, but this one has
+the distinct advantage that it's certainly going to work well with nREPL. ;-)
+
 ## Motivation
 
 In each and every application, which contacts peer processes via some
@@ -33,15 +42,6 @@ includes ways to encode numbers and collections like lists or maps.
 
 [net]: http://cr.yp.to/proto/netstrings.txt
 [bc]:  http://wiki.theory.org/BitTorrentSpecification#Bencoding
-
-This particular implementation was extracted from [nREPL][], so it
-could be reused by other applications and be made
-ClojureScript-compatible as well.
-
-[nREPL]: https://nrepl.org
-
-There are other netstring/bencode libraries for Clojure out there, but this one has
-the distinct advantage that it's certainly going to work well with nREPL. ;-)
 
 ## Usage
 
