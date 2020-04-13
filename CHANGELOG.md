@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.1.0 (2020-04-13)
+
+### Changes
+
+* [#3](https://github.com/nrepl/bencode/issues/3): Allow maps with keyword or symbol keys.
+
 ## 1.0.1 (2020-04-01)
 
 ### Bugs fixed

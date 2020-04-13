@@ -48,7 +48,7 @@ includes ways to encode numbers and collections like lists or maps.
 Just add `bencode` as a dependency to your project and start hacking.
 
 ```clojure
-[nrepl/bencode "1.0.1"]
+[nrepl/bencode "1.1.0"]
 ```
 
 The API is documented in great detail [here](https://github.com/nrepl/bencode/blob/master/src/bencode/core.clj).
