@@ -387,7 +387,7 @@
   (.write output (int e)))
 
 ;; However, maps are a bit special because their keys are sorted
-;; lexicographically based on their byte string represantation.
+;; lexicographically based on their byte string representation.
 
 (declare lexicographically)
 
