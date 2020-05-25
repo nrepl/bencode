@@ -60,6 +60,56 @@ The main functions in the API are:
 * `read-bencode`
 * `write-bencode`
 
+Here are some usage examples for each of the functions available:
+
+- `read-netstring`
+
+ ```clojure
+ (-> (.getBytes "13:Hello, World!," "UTF-8")
+     ByteArrayInputStream.
+     read-netstring
+     (String. "UTF-8"))
+
+ => Hello, World!
+ ```
+
+- `write-netstring`
+
+ ```clojure
+ (-> (doto (ByteArrayOutputStream.)
+        (write-netstring (.getBytes "Hello, World!" "UTF-8")))
+     .toString)
+
+ => "13:Hello, World!,"
+ ```
+
+- `read-bencode`
+
+ ```clojure
+ (vec
+   (map
+     #(String. % "UTF-8")
+     (-> (.getBytes "5:nrepl2:is7:awesomee" "UTF-8")
+         ByteArrayInputStream.
+         PushbackInputStream.
+         read-bencode)))
+
+=> ["nrepl" "is" "awesome"]
+ ```
+
+- `write-bencode`
+
+ ```clojure
+(-> (doto (ByteArrayOutputStream.)
+      (write-bencode {:foo "bar"}))
+    .toString)
+
+=> "d3:foo3:bare"
+ ```
+
+Additionally, you can check this [document](https://github.com/nrepl/nrepl/blob/master/test/clojure/nrepl/bencode_test.clj) to learn more about it's usage.
+
+
 ## License
 
 Copyright © 2018-2020 Meikel Brandmeyer, Bozhidar Batsov and nREPL contributors
