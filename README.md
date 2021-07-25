@@ -55,7 +55,7 @@ The API is documented in great detail [here](https://github.com/nrepl/bencode/bl
 
 The main functions in the API are:
 
-* `read-netsring`
+* `read-netstring`
 * `write-nestring`
 * `read-bencode`
 * `write-bencode`
@@ -107,7 +107,7 @@ Here are some usage examples for each of the functions available:
 => "d3:foo3:bare"
  ```
 
-Additionally, you can check this [document](https://github.com/nrepl/nrepl/blob/master/test/clojure/nrepl/bencode_test.clj) to learn more about it's usage.
+Additionally, you can check this [document](https://github.com/nrepl/nrepl/blob/master/test/clojure/nrepl/bencode_test.clj) to learn more about its usage.
 
 
 ## License
