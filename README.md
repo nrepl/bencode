@@ -124,7 +124,7 @@ contexts. Sky is the limit!
 
 ## License
 
-Copyright © 2018-2020 Meikel Brandmeyer, Bozhidar Batsov and nREPL contributors
+Copyright © 2018-2021 Meikel Brandmeyer, Bozhidar Batsov and nREPL contributors
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
