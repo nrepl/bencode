@@ -110,6 +110,18 @@ Here are some usage examples for each of the functions available:
 
 Additionally, you can check this [document](https://github.com/nrepl/nrepl/blob/master/test/clojure/nrepl/bencode_test.clj) to learn more about it's usage.
 
+## Use Cases
+
+Obviously you can use this library whenever you need to deal with netstrings or
+bencode, but I assume that in practice most people will end up using it for
+building alternative Clojure nREPL clients or
+servers. [babashka.nrepl](https://github.com/babashka/babashka.nrepl) is one
+notable user of the library.
+
+There's also the potential to have the library support ClojureScript and
+ClojureCLR down the road, so it could be leveraged in even more
+contexts. Sky is the limit!
+
 ## License
 
 Copyright © 2018-2020 Meikel Brandmeyer, Bozhidar Batsov and nREPL contributors
