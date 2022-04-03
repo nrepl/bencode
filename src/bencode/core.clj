@@ -245,7 +245,7 @@
                  (.unread input (int ch))
                  (read-netstring* input)))))
 
-;; To read the bencode encoded data we walk a long the sequence of tokens
+;; To read the bencode encoded data we walk along the sequence of tokens
 ;; and act according to the found tags.
 
 (declare read-integer read-list read-map)
