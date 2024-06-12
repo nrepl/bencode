@@ -8,13 +8,14 @@
 A netstring and bencode implementation for Clojure.
 
 This particular implementation was extracted from [nREPL][], so it
-could be reused by other applications and be made
-ClojureScript-compatible as well.
+could be reused by other applications.
 
 [nREPL]: https://nrepl.org
 
 There are other netstring/bencode libraries for Clojure out there, but this one has
 the distinct advantage that it's certainly going to work well with nREPL. ;-)
+
+**P.S.** It's also very fast and very memory efficient, but who's counting! :D
 
 ## Motivation
 
