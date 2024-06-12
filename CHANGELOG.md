@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.2.0 (2024-06-12)
+
+### Changes
+
+* [#16](https://github.com/nrepl/bencode/pull/16): Rewrite bencode implementation to be more performant and use Clojure 1.7 features. This basically matches the changes that were made in nREPL 1.2.
+
 ## 1.1.0 (2020-04-13)
 
 ### Changes

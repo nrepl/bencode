@@ -1,4 +1,4 @@
-(defproject nrepl/bencode "1.1.0"
+(defproject nrepl/bencode "1.2.0"
   :description "A netstring and bencode implementation for Clojure."
   :url "https://github.com/nrepl/bencode"
   :license {:name "Eclipse Public License"
